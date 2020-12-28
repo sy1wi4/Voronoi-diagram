@@ -86,18 +86,19 @@ class Voronoi:
 
     def checkCircle(self, leftArc: RBNode, midArc: RBNode, rightArc: RBNode,
                     convergencePoint: Point) -> bool:
-        left_point_is_moving_right = leftArc.point.y < midArc.point.y
-        right_point_is_moving_right = midArc.point.y < rightArc.point.y
 
-        left_initial_x = leftArc.point.x if left_point_is_moving_right else midArc.point.x
-        right_initial_x = midArc.point.x if right_point_is_moving_right else rightArc.point.x
+        leftPointIsMovingRight = leftArc.point.y < midArc.point.y
+        rightPointIsMovingRight = midArc.point.y < rightArc.point.y
 
-        if ((left_point_is_moving_right and left_initial_x < convergencePoint.x) or
-            ((not left_point_is_moving_right) and left_initial_x > convergencePoint.x)) is False:
+        leftInitialX = leftArc.point.x if leftPointIsMovingRight else midArc.point.x
+        rightInitialX = midArc.point.x if rightPointIsMovingRight else rightArc.point.x
+
+        if ((leftPointIsMovingRight and leftInitialX < convergencePoint.x) or
+            ((not leftPointIsMovingRight) and leftInitialX > convergencePoint.x)) is False:
             return False
 
-        if ((right_point_is_moving_right and right_initial_x < convergencePoint.x) or
-            ((not right_point_is_moving_right) and right_initial_x > convergencePoint.x)) is False:
+        if ((rightPointIsMovingRight and rightInitialX < convergencePoint.x) or
+            ((not rightPointIsMovingRight) and rightInitialX > convergencePoint.x)) is False:
             return False
 
         return True
