@@ -250,22 +250,6 @@ if __name__ == '__main__':
     voronoi.solve()
     from pprint import pprint
 
-    # pprint(voronoi.vertices)
-    # pprint(voronoi.notValidEvents)
-
-    # pprint(voronoi.eventsSet)
-
-    # display_tree(voronoi.beachLine.root)
-    # lowerLeft, upperRight = findBounds(points)
-    # print("fixing\n\n\n")
-    # endHalfEdges(lowerLeft, upperRight, voronoi)
-    # print("\n\nend of fixing\n\n")
-    # pprint(voronoi.listEdges)
-    # print("after fixing")
     pprint(voronoi.listEdges)
     pprint(voronoi.vertices)
-    # plt.xlim((lowerLeft.x, upperRight.x))
-    # plt.ylim((lowerLeft.y, upperRight.y))
-    #
-    #
-    # plt.show()
+
