@@ -21,6 +21,7 @@ class Voronoi:
         self.vertices = set()  # type: set[Point]
         self.listEdges = []  # type: list[HalfEdge]
 
+        self.findBounds()
         for p in points:
             self.events.put(p.toPQ())
 
@@ -38,6 +39,8 @@ class Voronoi:
                 self.handleSiteEvent(p)
             else:
                 self.handleCircleEvent(p)
+
+        self.endHalfEdges()
 
     def handleSiteEvent(self, point: Point):
         if self.beachLine.isEmpty() is True:
@@ -163,82 +166,78 @@ class Voronoi:
         left.rightHalfEdge = attachEdgeToPoint(left.point)
         right.leftHalfEdge = attachEdgeToPoint(right.point)
 
+    def findBounds(self) -> tuple[Point, Point]:
+        """:returns tuple of points, lowerLeft and upperRight corner"""
+        maxX = max(self.points, key=lambda p: p.x).x
+        maxY = max(self.points, key=lambda p: p.y).y
+        minX = min(self.points, key=lambda p: p.x).x
+        minY = min(self.points, key=lambda p: p.y).y
 
-def findBounds(points: set[Point]) -> tuple[Point, Point]:
-    """:returns tuple of points, lowerLeft and upperRight corner"""
-    maxX = max(points, key=lambda p: p.x).x
-    maxY = max(points, key=lambda p: p.y).y
-    minX = min(points, key=lambda p: p.x).x
-    minY = min(points, key=lambda p: p.y).y
+        # print(maxX, maxY, minX, minY)
 
-    # print(maxX, maxY, minX, minY)
+        divBy = 10
+        addX = (maxX - minY) / divBy
+        addY = (maxY - minY) / divBy
 
-    divBy = 10
-    addX = (maxX - minY) / divBy
-    addY = (maxY - minY) / divBy
+        self.lowerLeft = Point(minX - addX, minY - addY)
+        self.upperRight = Point(maxX + addX, maxY + addY)
 
-    lowerLeft = Point(minX - addX, minY - addY)
-    upperRight = Point(maxX + addX, maxY + addY)
+    def getIntersectionWithBox(self, point: Point, direction: Point) -> Optional[Point]:
+        def calculatePoint(t: float) -> Point:
+            x = point.x + t * direction.x
+            y = point.y + t * direction.y
+            return Point(x, y)
 
-    # print(lowerLeft)
-    # print(upperRight)
-    return lowerLeft, upperRight
+        t = inf
+        intersection = None
+        if direction.x > 0:
+            t = (self.upperRight.x - point.x) / direction.x
+            intersection = calculatePoint(t)
+        elif direction.x < 0:
+            t = (self.lowerLeft.x - point.x) / direction.x
+            intersection = calculatePoint(t)
 
+        if direction.y > 0:
+            newT = (self.upperRight.y - point.y) / direction.y
+            if newT < t:
+                intersection = calculatePoint(newT)
+        elif direction.y < 0:
+            newT = (self.lowerLeft.y - point.y) / direction.y
+            if newT < t:
+                intersection = calculatePoint(newT)
 
-def getIntersectionWithBox(lowerLeft: Point, upperRight: Point, point: Point, direction: Point) -> Optional[Point]:
-    def calculatePoint(t: float) -> Point:
-        x = point.x + t * direction.x
-        y = point.y + t * direction.y
-        return Point(x, y)
+        return intersection
 
-    t = inf
-    intersection = None
-    if direction.x > 0:
-        t = (upperRight.x - point.x) / direction.x
-        intersection = calculatePoint(t)
-    elif direction.x < 0:
-        t = (lowerLeft.x - point.x) / direction.x
-        intersection = calculatePoint(t)
+    def endHalfEdges(self):
+        leftArc = self.beachLine.minimum(voronoi.beachLine.root)
+        rightArc = leftArc.next
+        while rightArc is not None:
+            test = leftArc.rightHalfEdge.end
+            if test.x < self.lowerLeft.x or test.x > self.upperRight.x or \
+                    test.y < self.lowerLeft.y or test.y > self.upperRight.y:
+                # TODO tutaj mozna skonczyc te krawedzie ktore wychodza poza box
+                leftArc = rightArc
+                rightArc = rightArc.next
+                continue
 
-    if direction.y > 0:
-        newT = (upperRight.y - point.y) / direction.y
-        if newT < t:
-            intersection = calculatePoint(newT)
-    elif direction.y < 0:
-        newT = (lowerLeft.y - point.y) / direction.y
-        if newT < t:
-            intersection = calculatePoint(newT)
+            x = (leftArc.point.x + rightArc.point.x) / 2
+            y = (leftArc.point.y + rightArc.point.y) / 2
 
-    return intersection
+            tmpPoint = Point(x, y)
 
+            diffX = leftArc.point.x - rightArc.point.x
+            diffY = leftArc.point.y - rightArc.point.y
 
-def endHalfEdges(lowerLeft: Point, upperRight: Point, voronoi: Voronoi):
-    leftArc = voronoi.beachLine.minimum(voronoi.beachLine.root)
-    rightArc = leftArc.next
-    while rightArc is not None:
-        x = (leftArc.point.x + rightArc.point.x) / 2
-        y = (leftArc.point.y + rightArc.point.y) / 2
+            orientation = Point(-diffY, diffX)
 
-        tmpPoint = Point(x, y)
-        # print(leftArc.rightHalfEdge.end, tmpPoint )
+            intersection = self.getIntersectionWithBox(tmpPoint, orientation)
+            self.vertices.add(intersection)
 
-        # print("points", leftArc.point, rightArc.point)
-        # print("diff", )
-        diffX = leftArc.point.x - rightArc.point.x
-        diffY = leftArc.point.y - rightArc.point.y
+            leftArc.rightHalfEdge.start = intersection
+            rightArc.leftHalfEdge.end = intersection
 
-        orientation = Point(-diffY, diffX)
-
-        # print("direction", orientation)
-        intersection = getIntersectionWithBox(lowerLeft, upperRight, tmpPoint, orientation)
-        voronoi.vertices.add(intersection)
-
-        leftArc.rightHalfEdge.start = intersection
-        rightArc.leftHalfEdge.end = intersection
-
-        leftArc = rightArc
-        rightArc = rightArc.next
-
+            leftArc = rightArc
+            rightArc = rightArc.next
 
 if __name__ == '__main__':
     test = [(5, 60), (20, 10), (40, 80), (60, 40), (80, 75), (75, 20)]
@@ -251,22 +250,6 @@ if __name__ == '__main__':
     voronoi.solve()
     from pprint import pprint
 
-    # pprint(voronoi.vertices)
-    # pprint(voronoi.notValidEvents)
-
-    # pprint(voronoi.eventsSet)
-
-    # display_tree(voronoi.beachLine.root)
-    lowerLeft, upperRight = findBounds(points)
-    # print("fixing\n\n\n")
-    endHalfEdges(lowerLeft, upperRight, voronoi)
-    # print("\n\nend of fixing\n\n")
-    # pprint(voronoi.listEdges)
-    # print("after fixing")
     pprint(voronoi.listEdges)
     pprint(voronoi.vertices)
-    # plt.xlim((lowerLeft.x, upperRight.x))
-    # plt.ylim((lowerLeft.y, upperRight.y))
-    #
-    #
-    # plt.show()
+
