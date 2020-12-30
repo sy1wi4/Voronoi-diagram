@@ -275,8 +275,6 @@ if __name__ == '__main__':
     pprint(voronoi.listEdges)
     pprint(voronoi.vertices)
 
-    sites = [] # type: list[HalfEdge]
-
     point = list(points)[1]
 
     edge = point.edge
