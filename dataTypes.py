@@ -34,11 +34,13 @@ class Point:
             return False
         return self.x == other.x and self.y == other.y
 
-
 class HalfEdge:
     def __init__(self):
         self.start = None  # type: Optional[Point]
         self.end = None  # type: Optional[Point]
+
+        self.next = None  # type: Optional[HalfEdge]
+        self.prev = None  # type: Optional[HalfEdge]
 
     def __repr__(self):
         return "[" + str(self.start) + " -> " + str(self.end) + "]"
