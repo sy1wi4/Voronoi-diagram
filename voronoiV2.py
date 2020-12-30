@@ -9,7 +9,7 @@ from rbTree import RBTree, RBNode, display_tree
 
 """
 Inspiration:
-https://github.com/pvigier/FortuneAlgorithm/blob/master/src/FortuneAlgorithm.cpp
+https://pvigier.github.io/2018/11/18/fortune-algorithm-details.html
 """
 
 class Voronoi:
@@ -21,7 +21,7 @@ class Voronoi:
         self.vertices = set()  # type: set[Point]
         self.listEdges = []  # type: list[HalfEdge]
 
-        self.findBounds()
+        self.setBounds()
         for p in points:
             self.events.put(p.toPQ())
 
@@ -111,6 +111,8 @@ class Voronoi:
         convergencePoint, y = getConvergencePoint(leftArc.point, midArc.point, rightArc.point)
 
         # print("convergenece point", y, convergencePoint)
+        if convergencePoint is None or point is None or y is None:
+            return
         if y > point.y or self.checkCircle(leftArc, midArc, rightArc, convergencePoint) is False:
             return
 
@@ -147,12 +149,31 @@ class Voronoi:
         arc.leftHalfEdge.end = point
         arc.rightHalfEdge.start = point
 
+        #dll
+        arc.leftHalfEdge.next = arc.rightHalfEdge
+        arc.rightHalfEdge.prev = arc.leftHalfEdge
+        print("removing arc", arc.leftHalfEdge.next, arc.rightHalfEdge.prev)
+
         self.beachLine.delete(arc)
+
+        #dll
+        prevHalfEdge = arc.prev.rightHalfEdge
+        nextHalfEdge = arc.next.leftHalfEdge
 
         self.addEdge(arc.prev, arc.next)
 
         arc.prev.rightHalfEdge.end = point
         arc.next.leftHalfEdge.start = point
+
+        #dll
+        arc.prev.rightHalfEdge.next = prevHalfEdge
+        prevHalfEdge.prev = arc.prev.rightHalfEdge
+        print("removing v2", arc.prev.rightHalfEdge, prevHalfEdge)
+
+
+        nextHalfEdge.next = arc.next.leftHalfEdge
+        arc.next.leftHalfEdge.prev = nextHalfEdge
+        print("removing v2", nextHalfEdge, arc.next.leftHalfEdge)
 
     def addEdge(self, left: RBNode, right: RBNode):
         # print("from", left.point, "to", right.point)
@@ -166,8 +187,7 @@ class Voronoi:
         left.rightHalfEdge = attachEdgeToPoint(left.point)
         right.leftHalfEdge = attachEdgeToPoint(right.point)
 
-    def findBounds(self) -> tuple[Point, Point]:
-        """:returns tuple of points, lowerLeft and upperRight corner"""
+    def setBounds(self):
         maxX = max(self.points, key=lambda p: p.x).x
         maxY = max(self.points, key=lambda p: p.y).y
         minX = min(self.points, key=lambda p: p.x).x
@@ -209,11 +229,11 @@ class Voronoi:
         return intersection
 
     def endHalfEdges(self):
-        leftArc = self.beachLine.minimum(voronoi.beachLine.root)
+        leftArc = self.beachLine.minimum(self.beachLine.root)
         rightArc = leftArc.next
         while rightArc is not None:
             test = leftArc.rightHalfEdge.end
-            if test.x < self.lowerLeft.x or test.x > self.upperRight.x or \
+            if test is None or test.x < self.lowerLeft.x or test.x > self.upperRight.x or \
                     test.y < self.lowerLeft.y or test.y > self.upperRight.y:
                 # TODO tutaj mozna skonczyc te krawedzie ktore wychodza poza box
                 leftArc = rightArc
@@ -239,8 +259,10 @@ class Voronoi:
             leftArc = rightArc
             rightArc = rightArc.next
 
+
 if __name__ == '__main__':
     test = [(5, 60), (20, 10), (40, 80), (60, 40), (80, 75), (75, 20)]
+    # test = [(1, 1), (2, 2), (3, 3), (4, 4)]
     points = set()
     for x, y in test:
         points.add(Point(x, y))
@@ -252,4 +274,19 @@ if __name__ == '__main__':
 
     pprint(voronoi.listEdges)
     pprint(voronoi.vertices)
+
+    sites = [] # type: list[HalfEdge]
+
+    point = list(points)[1]
+
+    edge = point.edge
+    curr = edge.next
+    print()
+    print("lista krawedzi dla punktu:",point)
+    print(edge)
+    while curr != edge:
+        if curr is None:
+            print("end of list!, HalfEdge was infinite")
+        print(curr)
+        curr = curr.next
 
