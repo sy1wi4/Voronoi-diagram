@@ -34,12 +34,6 @@ class Point:
             return False
         return self.x == other.x and self.y == other.y
 
-    def __gt__(self, other): #todo add to documentation
-        if self == other or other is None:
-            return False
-
-        return self.x > other.x and self.y > other.y
-
 class HalfEdge:
     def __init__(self):
         self.start = None  # type: Optional[Point]
