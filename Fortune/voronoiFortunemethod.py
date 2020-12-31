@@ -275,8 +275,6 @@ if __name__ == '__main__':
     pprint(voronoi.listEdges)
     pprint(voronoi.vertices)
 
-    point = list(points)[1]
-
     edge = point.edge
     curr = edge.next
     print()
