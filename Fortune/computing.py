@@ -23,6 +23,8 @@ def getIntersectionOfParabolas(p1: Point, p2: Point, y: float) -> Point:
 
     return Point(px, y)
 
+def det(a,b,c):
+    return a.x*b.y+a.y*c.x+b.x*c.y-c.x*b.y-a.y*b.x-a.x*c.y
 
 """
 https://math.stackexchange.com/questions/213658/get-the-equation-of-a-circle-when-given-3-points

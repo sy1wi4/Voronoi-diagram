@@ -125,11 +125,12 @@ class _Button_callback(object):
             ylim = self.ax.get_ylim()
 
         self.ax.clear()
+        
+        for collection in (self.scenes[self.i].lines + self.added_lines + self.added_rects):
+            self.ax.add_collection(collection.get_collection())
         for collection in (self.scenes[self.i].points + self.added_points):
             if len(collection.points) > 0:
                 self.ax.scatter(*zip(*(np.array(collection.points))), **collection.kwargs)
-        for collection in (self.scenes[self.i].lines + self.added_lines + self.added_rects):
-            self.ax.add_collection(collection.get_collection())
 
         for circle in self.scenes[self.i].circles:
             self.ax.add_patch(circle)
