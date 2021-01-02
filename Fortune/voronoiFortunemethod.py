@@ -1,10 +1,11 @@
 from queue import PriorityQueue
 from math import inf
 from typing import Optional
+from random import uniform
 
-from computing import getConvergencePoint
+from computing import getConvergencePoint, det
 from dataTypes import Point, HalfEdge
-from rbTree import RBTree, RBNode, display_tree
+from rbTree import RBTree, RBNode
 
 
 """
@@ -28,7 +29,6 @@ class Voronoi:
     def solve(self):
         while self.events.empty() is False:
             y, p = self.events.get()
-            # display_tree(self.beachLine.root)
             # print(y, p)
             # print(self.notValidEvents)
             # print(p in self.notValidEvents)
@@ -87,33 +87,17 @@ class Voronoi:
 
         return leftArc, midArc, rightArc
 
-    def checkCircle(self, leftArc: RBNode, midArc: RBNode, rightArc: RBNode,
-                    convergencePoint: Point) -> bool:
-
-        leftPointIsMovingRight = leftArc.point.y < midArc.point.y
-        rightPointIsMovingRight = midArc.point.y < rightArc.point.y
-
-        leftInitialX = leftArc.point.x if leftPointIsMovingRight else midArc.point.x
-        rightInitialX = midArc.point.x if rightPointIsMovingRight else rightArc.point.x
-
-        if ((leftPointIsMovingRight and leftInitialX < convergencePoint.x) or
-            ((not leftPointIsMovingRight) and leftInitialX > convergencePoint.x)) is False:
-            return False
-
-        if ((rightPointIsMovingRight and rightInitialX < convergencePoint.x) or
-            ((not rightPointIsMovingRight) and rightInitialX > convergencePoint.x)) is False:
-            return False
-
-        return True
-
     def addCircleEvent(self, leftArc: RBNode, midArc: RBNode, rightArc: RBNode,
-                       point: Point):  # TODO naprawic sprawdzanie
+                       point: Point):  
         convergencePoint, y = getConvergencePoint(leftArc.point, midArc.point, rightArc.point)
 
         # print("convergenece point", y, convergencePoint)
         if convergencePoint is None or point is None or y is None:
             return
-        if y > point.y or self.checkCircle(leftArc, midArc, rightArc, convergencePoint) is False:
+         
+        d1 = det(leftArc.point, midArc.point, rightArc.point) > 0 #counter clockwise
+        
+        if y > point.y or d1:
             return
 
         convergencePoint.arc = midArc
@@ -152,7 +136,7 @@ class Voronoi:
         #dll
         arc.leftHalfEdge.next = arc.rightHalfEdge
         arc.rightHalfEdge.prev = arc.leftHalfEdge
-        print("removing arc", arc.leftHalfEdge.next, arc.rightHalfEdge.prev)
+#         print("removing arc", arc.leftHalfEdge.next, arc.rightHalfEdge.prev)
 
         self.beachLine.delete(arc)
 
@@ -168,12 +152,12 @@ class Voronoi:
         #dll
         arc.prev.rightHalfEdge.next = prevHalfEdge
         prevHalfEdge.prev = arc.prev.rightHalfEdge
-        print("removing v2", arc.prev.rightHalfEdge, prevHalfEdge)
+#         print("removing v2", arc.prev.rightHalfEdge, prevHalfEdge)
 
 
         nextHalfEdge.next = arc.next.leftHalfEdge
         arc.next.leftHalfEdge.prev = nextHalfEdge
-        print("removing v2", nextHalfEdge, arc.next.leftHalfEdge)
+#         print("removing v2", nextHalfEdge, arc.next.leftHalfEdge)
 
     def addEdge(self, left: RBNode, right: RBNode):
         # print("from", left.point, "to", right.point)
@@ -262,7 +246,8 @@ class Voronoi:
 
 if __name__ == '__main__':
     test = [(5, 60), (20, 10), (40, 80), (60, 40), (80, 75), (75, 20)]
-    # test = [(1, 1), (2, 2), (3, 3), (4, 4)]
+#     test = [(uniform(0,1000), uniform(0,1000)) for _ in range(8)]
+
     points = set()
     for x, y in test:
         points.add(Point(x, y))
@@ -274,6 +259,7 @@ if __name__ == '__main__':
 
     pprint(voronoi.listEdges)
     pprint(voronoi.vertices)
+
 
     edge = point.edge
     curr = edge.next
